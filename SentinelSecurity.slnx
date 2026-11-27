@@ -1,3 +1,9 @@
 <Solution>
     <Project Path="SentinelSecurity.Core/SentinelSecurity.Core.csproj" />
+    <Project Path="SentinelSecurity.Engine/SentinelSecurity.Engine.csproj" />
+    <Project Path="SentinelSecurity.Infrastructure/SentinelSecurity.Infrastructure.csproj" />
+    <Project Path="SentinelSecurity.MachineLearning/SentinelSecurity.MachineLearning.csproj" />
+    <Project Path="SentinelSecurity.Monitoring/SentinelSecurity.Monitoring.csproj" />
+    <Project Path="SentinelSecurity.Tests/SentinelSecurity.Tests.csproj" />
+    <Project Path="SentinelSecurity.UI/SentinelSecurity.UI.csproj" />
 </Solution>

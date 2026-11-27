@@ -1,0 +1,803 @@
+<Window x:Class="SentinelSecurity.UI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:SentinelSecurity.UI"
+        Title="{StaticResource Brand}" Width="1160" Height="760" MinWidth="900" MinHeight="600"
+        WindowStartupLocation="CenterScreen" UseLayoutRounding="True" SnapsToDevicePixels="True"
+        FontFamily="{StaticResource UiFont}" FontSize="13" Language="es-CL"
+        Background="{DynamicResource WindowBrush}" Foreground="{DynamicResource TextBrush}">
+    <Window.Resources>
+        <local:SpanishValueConverter x:Key="SpanishValue" />
+        <local:LocalTimestampConverter x:Key="LocalTimestamp" />
+        <local:PresentVisibilityConverter x:Key="PresentVisibility" />
+    </Window.Resources>
+    <Grid Background="{DynamicResource WindowBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="61" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="221" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.ColumnSpan="2" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1"
+                Padding="19,0,22,0">
+            <Grid>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Background="{DynamicResource AccentSurfaceBrush}" CornerRadius="10" Width="38" Height="38">
+                        <Path Data="{StaticResource IconBrand}" Style="{StaticResource IconStyle}" Width="20" Height="23"
+                              HorizontalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="{StaticResource Brand}" FontSize="19" FontWeight="SemiBold"
+                               VerticalAlignment="Center" Margin="11,0,0,0" />
+                </StackPanel>
+                <Border CornerRadius="12" HorizontalAlignment="Right" VerticalAlignment="Center" Padding="11,5">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Background" Value="{DynamicResource WarningSurfaceBrush}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding MonitorActive}" Value="True">
+                                    <Setter Property="Background" Value="{DynamicResource SuccessSurfaceBrush}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding HasActiveThreats}" Value="True">
+                                    <Setter Property="Background" Value="{DynamicResource DangerSurfaceBrush}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <TextBlock Text="{Binding ProtectionBadge}" FontSize="12" FontWeight="SemiBold"
+                               AutomationProperties.AutomationId="ProtectionBadge" AutomationProperties.LiveSetting="Polite">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding MonitorActive}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding HasActiveThreats}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Border>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="1" Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource DividerBrush}"
+                BorderThickness="0,0,1,0" Padding="12,17,11,8">
+            <ListBox SelectedIndex="{Binding PageIndex, Mode=TwoWay}" Padding="0" BorderThickness="0"
+                     Background="Transparent" ItemContainerStyle="{StaticResource NavItem}"
+                     AutomationProperties.AutomationId="SectionNavigation" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBoxItem AutomationProperties.Name="{StaticResource Home}"
+                             AutomationProperties.AutomationId="NavigateHome">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Path Data="{StaticResource IconHome}" Style="{StaticResource NavIcon}" />
+                        <TextBlock Grid.Column="1" Text="{StaticResource Home}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                    </Grid>
+                </ListBoxItem>
+                <ListBoxItem AutomationProperties.Name="{StaticResource Analysis}"
+                             AutomationProperties.AutomationId="NavigateAnalysis">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Path Data="{StaticResource IconScan}" Style="{StaticResource NavIcon}" />
+                        <TextBlock Grid.Column="1" Text="{StaticResource Analysis}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                    </Grid>
+                </ListBoxItem>
+                <ListBoxItem AutomationProperties.Name="{StaticResource Protection}"
+                             AutomationProperties.AutomationId="NavigateProtection">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Path Data="{StaticResource IconShield}" Style="{StaticResource NavIcon}" />
+                        <TextBlock Grid.Column="1" Text="{StaticResource Protection}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                    </Grid>
+                </ListBoxItem>
+                <ListBoxItem AutomationProperties.Name="{StaticResource Threats}"
+                             AutomationProperties.AutomationId="NavigateThreats">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Path Data="{StaticResource IconAlert}" Style="{StaticResource NavIcon}" />
+                        <TextBlock Grid.Column="1" Text="{StaticResource Threats}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                    </Grid>
+                </ListBoxItem>
+                <ListBoxItem AutomationProperties.Name="{StaticResource Quarantine}"
+                             AutomationProperties.AutomationId="NavigateQuarantine">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Path Data="{StaticResource IconLock}" Style="{StaticResource NavIcon}" />
+                        <TextBlock Grid.Column="1" Text="{StaticResource Quarantine}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                    </Grid>
+                </ListBoxItem>
+                <ListBoxItem AutomationProperties.Name="{StaticResource Processes}"
+                             AutomationProperties.AutomationId="NavigateProcesses">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Path Data="{StaticResource IconChip}" Style="{StaticResource NavIcon}" />
+                        <TextBlock Grid.Column="1" Text="{StaticResource Processes}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                    </Grid>
+                </ListBoxItem>
+                <ListBoxItem AutomationProperties.Name="{StaticResource System}"
+                             AutomationProperties.AutomationId="NavigateSystem">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Path Data="{StaticResource IconDesktop}" Style="{StaticResource NavIcon}" />
+                        <TextBlock Grid.Column="1" Text="{StaticResource System}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                    </Grid>
+                </ListBoxItem>
+                <ListBoxItem AutomationProperties.Name="{StaticResource History}"
+                             AutomationProperties.AutomationId="NavigateHistory">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Path Data="{StaticResource IconHistory}" Style="{StaticResource NavIcon}" />
+                        <TextBlock Grid.Column="1" Text="{StaticResource History}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                    </Grid>
+                </ListBoxItem>
+                <ListBoxItem AutomationProperties.Name="{StaticResource Updates}"
+                             AutomationProperties.AutomationId="NavigateUpdates">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Path Data="{StaticResource IconDatabase}" Style="{StaticResource NavIcon}" />
+                        <TextBlock Grid.Column="1" Text="{StaticResource Updates}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                    </Grid>
+                </ListBoxItem>
+                <ListBoxItem AutomationProperties.Name="{StaticResource Settings}"
+                             AutomationProperties.AutomationId="NavigateSettings">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Path Data="{StaticResource IconSettings}" Style="{StaticResource NavIcon}" />
+                        <TextBlock Grid.Column="1" Text="{StaticResource Settings}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                    </Grid>
+                </ListBoxItem>
+            </ListBox>
+        </Border>
+
+        <TabControl Grid.Column="1" Grid.Row="1" SelectedIndex="{Binding PageIndex, Mode=OneWay}"
+                    Background="Transparent" Foreground="{DynamicResource TextBrush}" BorderThickness="0" IsTabStop="False"
+                    AutomationProperties.AutomationId="ActiveSection">
+            <TabControl.Template>
+                <ControlTemplate TargetType="TabControl">
+                    <ContentPresenter x:Name="PART_SelectedContentHost" ContentSource="SelectedContent" />
+                </ControlTemplate>
+            </TabControl.Template>
+            <TabItem>
+                <ScrollViewer Style="{StaticResource PageScroll}">
+                    <StackPanel Style="{StaticResource PageSurface}">
+                        <Border Style="{StaticResource Surface}" Background="{DynamicResource HeroBrush}" Padding="22,19,22,15" Margin="0,0,0,14">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <StackPanel HorizontalAlignment="Center">
+                                    <Border Width="60" Height="56" CornerRadius="18" HorizontalAlignment="Center">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="{DynamicResource AccentSurfaceBrush}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding MonitorActive}" Value="True">
+                                                        <Setter Property="Background" Value="{DynamicResource SuccessSurfaceBrush}" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding HasActiveThreats}" Value="True">
+                                                        <Setter Property="Background" Value="{DynamicResource DangerSurfaceBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <Path Width="27" Height="31" HorizontalAlignment="Center">
+                                            <Path.Style>
+                                                <Style TargetType="Path" BasedOn="{StaticResource IconStyle}">
+                                                    <Setter Property="Data" Value="{StaticResource IconBrand}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding MonitorActive}" Value="True">
+                                                            <Setter Property="Data" Value="{StaticResource IconShield}" />
+                                                            <Setter Property="Stroke" Value="{DynamicResource SuccessBrush}" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding HasActiveThreats}" Value="True">
+                                                            <Setter Property="Data" Value="{StaticResource IconAlert}" />
+                                                            <Setter Property="Stroke" Value="{DynamicResource DangerBrush}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Path.Style>
+                                        </Path>
+                                    </Border>
+                                    <TextBlock Text="{Binding SecurityTitle}" Style="{StaticResource PageTitle}" Margin="0,8,0,2"
+                                               TextAlignment="Center" TextWrapping="Wrap" AutomationProperties.AutomationId="SecurityTitle" />
+                                    <TextBlock Text="{Binding LastScanText}" Style="{StaticResource MutedText}" TextAlignment="Center"
+                                               FontSize="14" AutomationProperties.AutomationId="LastScanText" />
+                                </StackPanel>
+                                <Border Grid.Row="1" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0"
+                                        Padding="0,11,0,0" Margin="0,14,0,0">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                            <TextBlock Text="{StaticResource Engines}" Style="{StaticResource MutedText}" FontSize="12" />
+                                                <TextBlock Text="{Binding EngineText}" TextWrapping="Wrap" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"
+                                                       Margin="0,3,0,0" AutomationProperties.AutomationId="EngineText" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                            <TextBlock Text="{StaticResource SignatureUpdates}" Style="{StaticResource MutedText}" FontSize="12" />
+                                                <TextBlock Text="{Binding LastUpdateText}" TextWrapping="Wrap" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"
+                                                       Margin="0,3,0,0" AutomationProperties.AutomationId="LastUpdateText" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </Border>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="10" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="10" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="10" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Button Grid.Column="0" Grid.Row="0" Style="{StaticResource TileButton}"
+                                    AutomationProperties.AutomationId="TileQuick" AutomationProperties.Name="{StaticResource Quick}"
+                                    Command="{Binding QuickCommand}">
+                                <Grid>
+                                    <StackPanel Margin="0,0,24,0">
+                                        <Path Data="{StaticResource IconScan}" Style="{StaticResource IconStyle}" HorizontalAlignment="Left" Width="21" Height="21" />
+                                        <TextBlock Text="{StaticResource Quick}" Style="{StaticResource TileTitle}" />
+                                    </StackPanel>
+                                    <Path Data="{StaticResource IconArrow}" Style="{StaticResource IconStyle}" Width="8" Height="13"
+                                          Stroke="{DynamicResource MutedBrush}" HorizontalAlignment="Right" />
+                                </Grid>
+                            </Button>
+                            <Button Grid.Column="2" Grid.Row="0" Style="{StaticResource TileButton}"
+                                    AutomationProperties.AutomationId="TileFull" AutomationProperties.Name="{StaticResource Full}"
+                                    Command="{Binding FullCommand}">
+                                <Grid>
+                                    <StackPanel Margin="0,0,24,0">
+                                        <Path Data="{StaticResource IconFolderScan}" Style="{StaticResource IconStyle}" HorizontalAlignment="Left" Width="21" Height="21" />
+                                        <TextBlock Text="{StaticResource Full}" Style="{StaticResource TileTitle}" />
+                                    </StackPanel>
+                                    <Path Data="{StaticResource IconArrow}" Style="{StaticResource IconStyle}" Width="8" Height="13"
+                                          Stroke="{DynamicResource MutedBrush}" HorizontalAlignment="Right" />
+                                </Grid>
+                            </Button>
+                            <Button Grid.Column="0" Grid.Row="2" Style="{StaticResource TileButton}"
+                                    AutomationProperties.AutomationId="TileQuarantine" AutomationProperties.Name="{StaticResource Quarantine}"
+                                    Command="{Binding NavigateCommand}" CommandParameter="4">
+                                <Grid>
+                                    <StackPanel Margin="0,0,24,0">
+                                        <Path Data="{StaticResource IconLock}" Style="{StaticResource IconStyle}" HorizontalAlignment="Left" Width="21" Height="21" />
+                                        <TextBlock Text="{StaticResource Quarantine}" Style="{StaticResource TileTitle}" />
+                                    </StackPanel>
+                                    <Path Data="{StaticResource IconArrow}" Style="{StaticResource IconStyle}" Width="8" Height="13"
+                                          Stroke="{DynamicResource MutedBrush}" HorizontalAlignment="Right" />
+                                </Grid>
+                            </Button>
+                            <Button Grid.Column="2" Grid.Row="2" Style="{StaticResource TileButton}"
+                                    AutomationProperties.AutomationId="TileDatabase" AutomationProperties.Name="{StaticResource Database}"
+                                    Command="{Binding NavigateCommand}" CommandParameter="8">
+                                <Grid>
+                                    <StackPanel Margin="0,0,24,0">
+                                        <Path Data="{StaticResource IconDatabase}" Style="{StaticResource IconStyle}" HorizontalAlignment="Left" Width="21" Height="21" />
+                                        <TextBlock Text="{StaticResource Database}" Style="{StaticResource TileTitle}" />
+                                    </StackPanel>
+                                    <Path Data="{StaticResource IconArrow}" Style="{StaticResource IconStyle}" Width="8" Height="13"
+                                          Stroke="{DynamicResource MutedBrush}" HorizontalAlignment="Right" />
+                                </Grid>
+                            </Button>
+                            <Button Grid.Column="0" Grid.Row="4" Style="{StaticResource TileButton}"
+                                    AutomationProperties.AutomationId="TileMonitor" AutomationProperties.Name="{StaticResource Monitor}"
+                                    Command="{Binding NavigateCommand}" CommandParameter="2">
+                                <Grid>
+                                    <StackPanel Margin="0,0,24,0">
+                                        <Path Data="{StaticResource IconActivity}" Style="{StaticResource IconStyle}" HorizontalAlignment="Left" Width="21" Height="21" />
+                                        <TextBlock Text="{StaticResource Monitor}" Style="{StaticResource TileTitle}" />
+                                    </StackPanel>
+                                    <Path Data="{StaticResource IconArrow}" Style="{StaticResource IconStyle}" Width="8" Height="13"
+                                          Stroke="{DynamicResource MutedBrush}" HorizontalAlignment="Right" />
+                                </Grid>
+                            </Button>
+                            <Button Grid.Column="2" Grid.Row="4" Style="{StaticResource TileButton}"
+                                    AutomationProperties.AutomationId="TileIntelligent" AutomationProperties.Name="{StaticResource Intelligent}"
+                                    Command="{Binding NavigateCommand}" CommandParameter="1" Click="OnIntelligentClick">
+                                <Grid>
+                                    <StackPanel Margin="0,0,24,0">
+                                        <Path Data="{StaticResource IconBrain}" Style="{StaticResource IconStyle}" HorizontalAlignment="Left" Width="21" Height="21" />
+                                        <TextBlock Text="{StaticResource Intelligent}" Style="{StaticResource TileTitle}" />
+                                    </StackPanel>
+                                    <Path Data="{StaticResource IconArrow}" Style="{StaticResource IconStyle}" Width="8" Height="13"
+                                          Stroke="{DynamicResource MutedBrush}" HorizontalAlignment="Right" />
+                                </Grid>
+                            </Button>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            <TabItem>
+                <ScrollViewer Style="{StaticResource PageScroll}">
+                    <StackPanel Style="{StaticResource PageSurface}">
+                        <TextBlock Text="{StaticResource Analysis}" Style="{StaticResource PageTitle}" />
+                        <TextBlock Text="{StaticResource AnalysisIntro}" Style="{StaticResource MutedText}" Margin="0,4,0,18" />
+                        <WrapPanel>
+                            <Button Content="{StaticResource Quick}" Style="{StaticResource PrimaryButton}"
+                                    AutomationProperties.AutomationId="Quick" Command="{Binding QuickCommand}" />
+                            <Button Content="{StaticResource Full}" Style="{StaticResource ActionButton}"
+                                    AutomationProperties.AutomationId="Full" Command="{Binding FullCommand}" />
+                            <Button Content="{StaticResource SelectFile}" Style="{StaticResource ActionButton}"
+                                    AutomationProperties.AutomationId="SelectFile" Command="{Binding CustomFileCommand}" />
+                            <Button Content="{StaticResource SelectFolder}" Style="{StaticResource ActionButton}"
+                                    AutomationProperties.AutomationId="SelectFolder" Command="{Binding CustomFolderCommand}" />
+                        </WrapPanel>
+                        <Border Style="{StaticResource Surface}" Margin="0,4,0,12">
+                            <StackPanel>
+                                <TextBlock Text="{StaticResource ScanProgress}" Style="{StaticResource SectionTitle}" Margin="0,0,0,10" />
+                                <TextBlock Text="{Binding ProgressText}" Style="{StaticResource MutedText}" AutomationProperties.AutomationId="ScanProgressText"
+                                           AutomationProperties.LiveSetting="Polite" />
+                                <Grid Margin="0,10,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <ProgressBar Value="{Binding ProgressPercent, Mode=OneWay}" IsIndeterminate="{Binding ProgressIndeterminate, Mode=OneWay}"
+                                                 AutomationProperties.Name="{StaticResource Progress}"
+                                                 AutomationProperties.AutomationId="ScanProgressBar" />
+                                    <TextBlock Grid.Column="1" Text="{Binding ProgressPercent, StringFormat={}{0:N0} %}"
+                                               Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="9,0,0,0">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding ProgressIndeterminate}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Grid>
+                                <TextBlock Text="{Binding CurrentFile}" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource TextBrush}"
+                                           ToolTip="{Binding CurrentFile}" AutomationProperties.AutomationId="CurrentFile" />
+                                <WrapPanel Margin="0,10,0,0" Visibility="{Binding ScanBusy, Converter={StaticResource BooleanToVisibility}}">
+                                    <Button Content="{Binding PauseText}" Style="{StaticResource ActionButton}" Command="{Binding PauseCommand}"
+                                            AutomationProperties.AutomationId="PauseResume" />
+                                    <Button Content="{StaticResource Cancel}" Style="{StaticResource DangerButton}"
+                                            AutomationProperties.AutomationId="Cancel" Command="{Binding CancelCommand}" />
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Surface}" x:Name="IntelligentPanel">
+                            <StackPanel>
+                                <TextBlock Text="{StaticResource Intelligent}" Style="{StaticResource SectionTitle}" Margin="0,0,0,10" />
+                                <TextBlock Text="{StaticResource IntelligentIntro}" Style="{StaticResource MutedText}" />
+                                <TextBlock Text="{Binding MachineLearningText}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,10,0,10"
+                                           Foreground="{DynamicResource TextBrush}"
+                                           AutomationProperties.AutomationId="MachineLearningStatus" />
+                                <Button Content="{StaticResource IntelligentThreats}" Style="{StaticResource ActionButton}"
+                                        AutomationProperties.AutomationId="IntelligentThreats" Command="{Binding NavigateCommand}" CommandParameter="3" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            <TabItem>
+                <ScrollViewer Style="{StaticResource PageScroll}">
+                    <StackPanel Style="{StaticResource PageSurface}">
+                        <TextBlock Text="{StaticResource Protection}" Style="{StaticResource PageTitle}" />
+                        <TextBlock Text="{StaticResource ProtectionIntro}" Style="{StaticResource MutedText}" Margin="0,4,0,18" />
+                        <Border Style="{StaticResource Surface}">
+                            <StackPanel>
+                                <TextBlock Text="{Binding ProtectionBadge}" Style="{StaticResource SectionTitle}" Margin="0,0,0,9" />
+                                <WrapPanel>
+                                    <Button Command="{Binding ToggleMonitorCommand}" AutomationProperties.AutomationId="ToggleMonitor">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+                                                <Setter Property="Content" Value="{StaticResource MonitorStart}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding MonitorActive}" Value="True">
+                                                        <Setter Property="Content" Value="{StaticResource MonitorStop}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                    <Button Content="{StaticResource MonitoringFolders}" Style="{StaticResource ActionButton}"
+                                            AutomationProperties.AutomationId="MonitoringFolders" Command="{Binding NavigateCommand}" CommandParameter="9" />
+                                </WrapPanel>
+                                <TextBlock Text="{Binding WatchFoldersText}" TextWrapping="Wrap" Style="{StaticResource MutedText}" Margin="0,5,0,0" />
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Surface}">
+                            <StackPanel>
+                                <TextBlock Text="{StaticResource WindowsProtection}" Style="{StaticResource MutedText}" Margin="0,0,0,11" />
+                                <Button Content="{StaticResource SystemView}" Style="{StaticResource ActionButton}"
+                                        AutomationProperties.AutomationId="SystemView" Command="{Binding NavigateCommand}" CommandParameter="6" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            <TabItem>
+                <ScrollViewer Style="{StaticResource PageScroll}">
+                    <StackPanel Style="{StaticResource PageSurface}">
+                        <TextBlock Text="{StaticResource Threats}" Style="{StaticResource PageTitle}" />
+                        <TextBlock Text="{StaticResource ThreatsIntro}" Style="{StaticResource MutedText}" Margin="0,4,0,18" />
+                        <WrapPanel>
+                            <Button Content="{StaticResource Isolate}" Style="{StaticResource PrimaryButton}"
+                                    AutomationProperties.AutomationId="Isolate" Command="{Binding IsolateCommand}" />
+                        </WrapPanel>
+                        <DataGrid ItemsSource="{Binding Findings}" SelectedItem="{Binding SelectedFinding, Mode=TwoWay}"
+                                  AutomationProperties.AutomationId="Findings" Height="290" Margin="0,0,0,12">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="{StaticResource Path}" Width="*" MinWidth="155" Binding="{Binding Path}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource Verdict}" Width="125" Binding="{Binding Verdict, Converter={StaticResource SpanishValue}}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource Type}" Width="90" Binding="{Binding FileType}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource Checksum}" Width="160" Binding="{Binding Sha256}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <Border Style="{StaticResource Surface}" Visibility="{Binding SelectedFinding, Converter={StaticResource PresentVisibility}}">
+                            <StackPanel>
+                                <TextBlock Text="{StaticResource Evidence}" Style="{StaticResource SectionTitle}" Margin="0,0,0,10" />
+                                <TextBlock Text="{Binding SelectedFinding.Error}" TextWrapping="Wrap" Foreground="{DynamicResource WarningBrush}" />
+                                <ItemsControl ItemsSource="{Binding SelectedFinding.Detections}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Margin="0,0,0,9">
+                                            <TextBlock Text="{Binding Engine}" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" />
+                                            <TextBlock Text="{Binding Name}" TextWrapping="Wrap" Foreground="{DynamicResource TextBrush}" />
+                                            <StackPanel Orientation="Horizontal">
+                                                <StackPanel.Style>
+                                                    <Style TargetType="StackPanel">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Score}" Value="0">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </StackPanel.Style>
+                                                <TextBlock Text="{StaticResource DetectionScore}" Style="{StaticResource MutedText}" Margin="0,0,6,0" />
+                                                <TextBlock Text="{Binding Score}" Foreground="{DynamicResource TextBrush}" />
+                                            </StackPanel>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            <TabItem>
+                <ScrollViewer Style="{StaticResource PageScroll}">
+                    <StackPanel Style="{StaticResource PageSurface}">
+                        <TextBlock Text="{StaticResource Quarantine}" Style="{StaticResource PageTitle}" />
+                        <TextBlock Text="{StaticResource QuarantineIntro}" Style="{StaticResource MutedText}" Margin="0,4,0,18" />
+                        <WrapPanel>
+                            <Button Content="{StaticResource Verify}" Style="{StaticResource ActionButton}"
+                                    AutomationProperties.AutomationId="Verify" Command="{Binding VerifyCommand}" />
+                            <Button Content="{StaticResource Restore}" Style="{StaticResource ActionButton}"
+                                    AutomationProperties.AutomationId="Restore" Command="{Binding RestoreCommand}" />
+                            <Button Content="{StaticResource Delete}" Style="{StaticResource DangerButton}"
+                                    AutomationProperties.AutomationId="Delete" Command="{Binding DeleteCommand}" />
+                        </WrapPanel>
+                        <DataGrid ItemsSource="{Binding QuarantineItems}" SelectedItem="{Binding SelectedQuarantine, Mode=TwoWay}"
+                                  AutomationProperties.AutomationId="QuarantineItems" Height="350" Margin="0,0,0,12">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="{StaticResource OriginalPath}" Width="*" MinWidth="168" Binding="{Binding OriginalPath}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource Reason}" Width="2*" MinWidth="150" Binding="{Binding Reason}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource Checksum}" Width="130" Binding="{Binding Sha256}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource IsolationDate}" Width="147" Binding="{Binding IsolatedAt, Converter={StaticResource LocalTimestamp}}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            <TabItem>
+                <ScrollViewer Style="{StaticResource PageScroll}">
+                    <StackPanel Style="{StaticResource PageSurface}">
+                        <TextBlock Text="{StaticResource Processes}" Style="{StaticResource PageTitle}" />
+                        <TextBlock Text="{StaticResource ProcessesIntro}" Style="{StaticResource MutedText}" Margin="0,4,0,18" />
+                        <WrapPanel>
+                            <Button Content="{StaticResource Refresh}" Style="{StaticResource PrimaryButton}"
+                                    AutomationProperties.AutomationId="Refresh" Command="{Binding RefreshProcessesCommand}" />
+                            <Button Content="{StaticResource ScanExecutable}" Style="{StaticResource ActionButton}"
+                                    AutomationProperties.AutomationId="ScanExecutable" Command="{Binding ScanProcessCommand}" />
+                        </WrapPanel>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Label Content="{StaticResource SearchProcesses}" Target="{Binding ElementName=ProcessFilterInput}"
+                                   VerticalAlignment="Center" Margin="0,0,11,0" />
+                            <TextBox x:Name="ProcessFilterInput" Grid.Column="1" Text="{Binding ProcessFilter, UpdateSourceTrigger=PropertyChanged}"
+                                     AutomationProperties.AutomationId="ProcessFilter" />
+                        </Grid>
+                        <DataGrid ItemsSource="{Binding Processes}" SelectedItem="{Binding SelectedProcess, Mode=TwoWay}"
+                                  AutomationProperties.AutomationId="Processes" Height="350" Margin="0,0,0,12">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="{StaticResource ProcessName}" Width="150" Binding="{Binding Name}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource Pid}" Width="60" Binding="{Binding Id}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource ProcessPath}" Width="*" MinWidth="180" Binding="{Binding Path}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource Publisher}" Width="120" Binding="{Binding Publisher}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource Signature}" Width="106" Binding="{Binding Signature, Converter={StaticResource SpanishValue}}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource Cpu}" Width="72" Binding="{Binding CpuPercent, StringFormat={}{0:N1} %}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource Ram}" Width="90" Binding="{Binding MemoryMegabytes, StringFormat={}{0:N0} MiB}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource Checksum}" Width="118" Binding="{Binding Sha256}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource Verdict}" Width="135" Binding="{Binding Result, Converter={StaticResource SpanishValue}}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            <TabItem>
+                <ScrollViewer Style="{StaticResource PageScroll}">
+                    <StackPanel Style="{StaticResource PageSurface}">
+                        <TextBlock Text="{StaticResource System}" Style="{StaticResource PageTitle}" />
+                        <TextBlock Text="{StaticResource AuditIntro}" Style="{StaticResource MutedText}" Margin="0,4,0,18" />
+                        <WrapPanel>
+                            <Button Content="{StaticResource StartAudit}" Style="{StaticResource PrimaryButton}"
+                                    AutomationProperties.AutomationId="StartAudit" Command="{Binding AuditCommand}" />
+                        </WrapPanel>
+                        <DataGrid ItemsSource="{Binding AuditItems}"
+                                  AutomationProperties.AutomationId="AuditItems" Height="430" Margin="0,0,0,12">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="{StaticResource Category}" Width="126" Binding="{Binding Category}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource Component}" Width="2*" MinWidth="175" Binding="{Binding Name}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource Status}" Width="130" Binding="{Binding Status, Converter={StaticResource SpanishValue}}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource Detail}" Width="3*" MinWidth="205" Binding="{Binding Detail}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            <TabItem>
+                <ScrollViewer Style="{StaticResource PageScroll}">
+                    <StackPanel Style="{StaticResource PageSurface}">
+                        <TextBlock Text="{StaticResource History}" Style="{StaticResource PageTitle}" />
+                        <TextBlock Text="{StaticResource HistoryIntro}" Style="{StaticResource MutedText}" Margin="0,4,0,18" />
+                        <DataGrid ItemsSource="{Binding Scans}"
+                                  AutomationProperties.AutomationId="Scans" Height="430" Margin="0,0,0,12">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="{StaticResource Date}" Width="150" Binding="{Binding Started, Converter={StaticResource LocalTimestamp}}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource Type}" Width="*" MinWidth="115" Binding="{Binding Kind, Converter={StaticResource SpanishValue}}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource Elapsed}" Width="95" Binding="{Binding Elapsed, Converter={StaticResource LocalTimestamp}}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource Examined}" Width="90" Binding="{Binding Examined}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource Threats}" Width="82" Binding="{Binding Threats}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource Skipped}" Width="82" Binding="{Binding Skipped}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource Canceled}" Width="90" Binding="{Binding Canceled, Converter={StaticResource SpanishValue}}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            <TabItem>
+                <ScrollViewer Style="{StaticResource PageScroll}">
+                    <StackPanel Style="{StaticResource PageSurface}">
+                        <TextBlock Text="{StaticResource Updates}" Style="{StaticResource PageTitle}" />
+                        <TextBlock Text="{StaticResource UpdatesIntro}" Style="{StaticResource MutedText}" Margin="0,4,0,18" />
+                        <WrapPanel>
+                            <Button Content="{StaticResource RefreshEngines}" Style="{StaticResource PrimaryButton}"
+                                    AutomationProperties.AutomationId="RefreshEngines" Command="{Binding RefreshEnginesCommand}" />
+                            <Button Content="{StaticResource UpdateClam}" Style="{StaticResource ActionButton}"
+                                    AutomationProperties.AutomationId="UpdateClam" Command="{Binding UpdateClamCommand}" />
+                            <Button Content="{StaticResource ImportYara}" Style="{StaticResource ActionButton}"
+                                    AutomationProperties.AutomationId="ImportYara" Command="{Binding ImportYaraCommand}" />
+                            <Button Content="{StaticResource ImportHashes}" Style="{StaticResource ActionButton}"
+                                    AutomationProperties.AutomationId="ImportHashes" Command="{Binding ImportSignaturesCommand}" />
+                            <Button Content="{StaticResource EngineSettings}" Style="{StaticResource ActionButton}"
+                                    AutomationProperties.AutomationId="EngineSettings" Command="{Binding NavigateCommand}" CommandParameter="9" />
+                        </WrapPanel>
+                        <DataGrid ItemsSource="{Binding EngineStatuses}"
+                                  AutomationProperties.AutomationId="EngineStatuses" Height="210" Margin="0,0,0,12">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="{StaticResource Engine}" Width="125" Binding="{Binding Name}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource Status}" Width="100" Binding="{Binding Available, Converter={StaticResource SpanishValue}}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource Detail}" Width="*" MinWidth="165" Binding="{Binding Detail}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <TextBlock Text="{StaticResource UpdatesHistory}" Style="{StaticResource SectionTitle}" Margin="0,0,0,10" />
+                        <DataGrid ItemsSource="{Binding Updates}"
+                                  AutomationProperties.AutomationId="Updates" Height="230" Margin="0,0,0,12">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="{StaticResource Source}" Width="*" MinWidth="150" Binding="{Binding Source}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource Version}" Width="2*" MinWidth="135" Binding="{Binding Version}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                                <DataGridTextColumn Header="{StaticResource Date}" Width="150" Binding="{Binding UpdatedAt, Converter={StaticResource LocalTimestamp}}"
+                                                    ElementStyle="{StaticResource TableText}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            <TabItem>
+                <ScrollViewer Style="{StaticResource PageScroll}">
+                    <StackPanel Style="{StaticResource PageSurface}">
+                        <TextBlock Text="{StaticResource Settings}" Style="{StaticResource PageTitle}" />
+                        <TextBlock Text="{StaticResource SettingsIntro}" Style="{StaticResource MutedText}" Margin="0,4,0,18" />
+                        <Border Style="{StaticResource Surface}">
+                            <StackPanel>
+                                <TextBlock Text="{StaticResource Preferences}" Style="{StaticResource SectionTitle}" Margin="0,0,0,10" />
+                                <WrapPanel>
+                                    <CheckBox Content="{StaticResource RunMonitor}" IsChecked="{Binding MonitorEnabled}" AutomationProperties.AutomationId="MonitorEnabled" />
+                                    <CheckBox Content="{StaticResource Notifications}" IsChecked="{Binding Notifications}" AutomationProperties.AutomationId="Notifications" />
+                                    <CheckBox Content="{StaticResource StartWithWindows}" IsChecked="{Binding StartWithWindows}" AutomationProperties.AutomationId="StartWithWindows" />
+                                    <CheckBox Content="{StaticResource AutoUpdate}" IsChecked="{Binding AutoUpdate}" AutomationProperties.AutomationId="AutoUpdate" />
+                                    <CheckBox Content="{StaticResource LightTheme}" IsChecked="{Binding LightTheme}" AutomationProperties.AutomationId="LightTheme" />
+                                    <CheckBox Content="{StaticResource GamingMode}" IsChecked="{Binding GamingMode}" AutomationProperties.AutomationId="GamingMode" />
+                                </WrapPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="13" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Margin="0,0,0,13">
+                                        <Label Content="{StaticResource Folders}" Target="{Binding ElementName=FieldFolders}" />
+                                        <TextBox x:Name="FieldFolders" Text="{Binding WatchFoldersText, UpdateSourceTrigger=PropertyChanged}"
+                                                 AutomationProperties.AutomationId="WatchFoldersText" AcceptsReturn="True" TextWrapping="Wrap" MinLines="3" MaxLines="8"
+                                                 VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" Margin="0,0,0,13">
+                                        <Label Content="{StaticResource Exclusions}" Target="{Binding ElementName=FieldExclusions}" />
+                                        <TextBox x:Name="FieldExclusions" Text="{Binding ExclusionsText, UpdateSourceTrigger=PropertyChanged}"
+                                                 AutomationProperties.AutomationId="ExclusionsText" AcceptsReturn="True" TextWrapping="Wrap" MinLines="3" MaxLines="8"
+                                                 VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" />
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Surface}">
+                            <StackPanel>
+                                <TextBlock Text="{StaticResource Performance}" Style="{StaticResource SectionTitle}" Margin="0,0,0,10" />
+                                <WrapPanel>
+                                    <StackPanel Margin="0,0,12,0" Width="154">
+                                        <Label Content="{StaticResource Concurrency}" Target="{Binding ElementName=FieldConcurrency}" />
+                                        <TextBox x:Name="FieldConcurrency" Text="{Binding Concurrency, UpdateSourceTrigger=PropertyChanged}"
+                                                 AutomationProperties.AutomationId="Concurrency"
+                                                 ToolTip="{StaticResource ConcurrencyRange}" AutomationProperties.HelpText="{StaticResource ConcurrencyRange}" />
+                                    </StackPanel>
+                                    <StackPanel Margin="0,0,12,0" Width="208">
+                                        <Label Content="{StaticResource MaxFileSize}" Target="{Binding ElementName=FieldMaxFileSize}" />
+                                        <TextBox x:Name="FieldMaxFileSize" Text="{Binding MaxFileMegabytes, UpdateSourceTrigger=PropertyChanged}"
+                                                 AutomationProperties.AutomationId="MaxFileMegabytes"
+                                                 ToolTip="{StaticResource MaxFileSizeRange}" AutomationProperties.HelpText="{StaticResource MaxFileSizeRange}" />
+                                    </StackPanel>
+                                    <StackPanel Margin="0" Width="230">
+                                        <Label Content="{StaticResource Schedule}" Target="{Binding ElementName=FieldSchedule}" />
+                                        <TextBox x:Name="FieldSchedule" Text="{Binding ScheduledScanHours, UpdateSourceTrigger=PropertyChanged}"
+                                                 AutomationProperties.AutomationId="ScheduledScanHours"
+                                                 ToolTip="{StaticResource ScheduleRange}" AutomationProperties.HelpText="{StaticResource ScheduleRange}" />
+                                    </StackPanel>
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Surface}">
+                            <StackPanel>
+                                <TextBlock Text="{StaticResource External}" Style="{StaticResource SectionTitle}" Margin="0,0,0,10" />
+                                <StackPanel Margin="0,0,0,13">
+                                    <Label Content="{StaticResource ClamScan}" Target="{Binding ElementName=FieldClamScan}" />
+                                    <TextBox x:Name="FieldClamScan" Text="{Binding ClamScanPath, UpdateSourceTrigger=PropertyChanged}"
+                                             AutomationProperties.AutomationId="ClamScanPath" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,0,13">
+                                    <Label Content="{StaticResource ClamDatabase}" Target="{Binding ElementName=FieldClamDatabase}" />
+                                    <TextBox x:Name="FieldClamDatabase" Text="{Binding ClamDatabasePath, UpdateSourceTrigger=PropertyChanged}"
+                                             AutomationProperties.AutomationId="ClamDatabasePath" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,0,13">
+                                    <Label Content="{StaticResource FreshClam}" Target="{Binding ElementName=FieldFreshClam}" />
+                                    <TextBox x:Name="FieldFreshClam" Text="{Binding FreshClamPath, UpdateSourceTrigger=PropertyChanged}"
+                                             AutomationProperties.AutomationId="FreshClamPath" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,0,13">
+                                    <Label Content="{StaticResource Yara}" Target="{Binding ElementName=FieldYara}" />
+                                    <TextBox x:Name="FieldYara" Text="{Binding YaraPath, UpdateSourceTrigger=PropertyChanged}"
+                                             AutomationProperties.AutomationId="YaraPath" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                        <WrapPanel>
+                            <Button Content="{StaticResource SaveSettings}" AutomationProperties.AutomationId="SaveSettings"
+                                    Command="{Binding SaveSettingsCommand}">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ElementName=FieldConcurrency, Path=(Validation.HasError)}" Value="True">
+                                                <Setter Property="IsEnabled" Value="False" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding ElementName=FieldMaxFileSize, Path=(Validation.HasError)}" Value="True">
+                                                <Setter Property="IsEnabled" Value="False" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding ElementName=FieldSchedule, Path=(Validation.HasError)}" Value="True">
+                                                <Setter Property="IsEnabled" Value="False" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                        </WrapPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+
+        <Border Grid.Row="2" Grid.ColumnSpan="2" Padding="17,8" MinHeight="36"
+                Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0">
+            <DockPanel>
+                <Path Data="{StaticResource IconActivity}" Style="{StaticResource IconStyle}" Width="14" Height="14"
+                      DockPanel.Dock="Left" Margin="0,0,7,0" />
+                <TextBlock Text="{Binding StatusText}" Foreground="{DynamicResource MutedBrush}" TextTrimming="CharacterEllipsis"
+                           ToolTip="{Binding StatusText}" FontSize="12" VerticalAlignment="Center"
+                           AutomationProperties.AutomationId="StatusText" AutomationProperties.LiveSetting="Polite" />
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <ItemGroup>
+        <ProjectReference Include="../SentinelSecurity.Core/SentinelSecurity.Core.csproj" />
+        <ProjectReference Include="../SentinelSecurity.Engine/SentinelSecurity.Engine.csproj" />
+    </ItemGroup>
+</Project>

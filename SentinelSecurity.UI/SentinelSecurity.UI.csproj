@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <AssemblyTitle>Sentinel Security</AssemblyTitle>
+    <Product>Sentinel Security</Product>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SentinelSecurity.Core\SentinelSecurity.Core.csproj" />
+    <ProjectReference Include="..\SentinelSecurity.Engine\SentinelSecurity.Engine.csproj" />
+    <ProjectReference Include="..\SentinelSecurity.Infrastructure\SentinelSecurity.Infrastructure.csproj" />
+    <ProjectReference Include="..\SentinelSecurity.Monitoring\SentinelSecurity.Monitoring.csproj" />
+  </ItemGroup>
+</Project>

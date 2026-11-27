@@ -4,6 +4,7 @@ public sealed class ScanControl
 {
     private readonly object gate = new();
     private TaskCompletionSource? resumeSignal;
+    public Guid Id { get; } = Guid.NewGuid();
 
     public bool IsPaused
     {

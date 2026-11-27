@@ -43,6 +43,5 @@ public sealed record SentinelSettings
     public string? ClamDatabase { get; init; }
     public string? FreshClam { get; init; }
     public string? Yara { get; init; }
-    public string? YaraCompiler { get; init; }
     public string? YaraRules { get; init; }
 }

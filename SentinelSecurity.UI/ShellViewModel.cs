@@ -81,6 +81,8 @@ public sealed partial class ShellViewModel : INotifyPropertyChanged, IAsyncDispo
         UpdateClamCommand = Operation(UpdateClamAsync);
         ImportYaraCommand = Operation(ImportYaraAsync);
         ImportSignaturesCommand = Operation(ImportSignaturesAsync);
+        ConfigureEnginesCommand = Operation(RunEngineSetupAsync);
+        CancelSetupCommand = new UiCommand(_ => setupCancellation?.Cancel(), () => SetupRunning);
         SaveSettingsCommand = Operation(SaveSettingsAsync);
     }
 
@@ -108,7 +110,7 @@ public sealed partial class ShellViewModel : INotifyPropertyChanged, IAsyncDispo
         var scan => $"Sin hallazgos en el último análisis · {scan.Examined:N0} examinados"
     };
     public string EngineText => EngineStatuses.Count == 0 ? "Verificando motores…" :
-        string.Join("   ·   ", EngineStatuses.Select(status => $"{status.Name} {(status.Available ? "disponible" : "sin configurar")}"));
+        string.Join("   ·   ", EngineStatuses.Select(status => $"{status.Name} {(status.Available ? "disponible" : "no disponible")}"));
     public string LastUpdateText => Updates.FirstOrDefault() is { } update
         ? $"Última actualización · {update.Source} · {update.UpdatedAt.ToLocalTime():g}"
         : "Sin actualizaciones registradas.";
@@ -150,6 +152,8 @@ public sealed partial class ShellViewModel : INotifyPropertyChanged, IAsyncDispo
     public ICommand ImportYaraCommand { get; }
     public ICommand ImportSignaturesCommand { get; }
     public ICommand SaveSettingsCommand { get; }
+    public ICommand ConfigureEnginesCommand { get; }
+    public ICommand CancelSetupCommand { get; }
 
     internal async Task InitializeAsync()
     {
@@ -235,6 +239,7 @@ public sealed partial class ShellViewModel : INotifyPropertyChanged, IAsyncDispo
         Replace(Updates, await store.GetUpdatesAsync(ct));
         OnChanged(nameof(EngineText));
         OnChanged(nameof(LastUpdateText));
+        OnChanged(nameof(ShowEngineSetup));
     }
 
     private async Task RefreshEnginesAsync(CancellationToken ct)

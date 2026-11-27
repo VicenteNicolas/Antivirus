@@ -261,6 +261,25 @@
                                 </Border>
                             </Grid>
                         </Border>
+                        <Border Style="{StaticResource Surface}" Padding="14,8"
+                                Background="{DynamicResource AccentSurfaceBrush}"
+                                Visibility="{Binding ShowEngineSetup, Converter={StaticResource BooleanToVisibility}}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Path Data="{StaticResource IconSettings}" Style="{StaticResource IconStyle}"
+                                      Margin="0,0,10,0" />
+                                <TextBlock Grid.Column="1" Text="{StaticResource EngineSetupNotice}"
+                                           Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold"
+                                           TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,12,0" />
+                                <Button Grid.Column="2" Content="{StaticResource EngineSetupLink}" Style="{StaticResource PrimaryButton}"
+                                        Margin="0" Command="{Binding NavigateCommand}" CommandParameter="8"
+                                        AutomationProperties.AutomationId="OpenEngineSetup" />
+                            </Grid>
+                        </Border>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -639,8 +658,10 @@
                     <StackPanel Style="{StaticResource PageSurface}">
                         <TextBlock Text="{StaticResource Updates}" Style="{StaticResource PageTitle}" />
                         <TextBlock Text="{StaticResource UpdatesIntro}" Style="{StaticResource MutedText}" Margin="0,4,0,18" />
+                        <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource EngineSetupPanel}" />
+                        <TextBlock Text="{StaticResource EngineTools}" Style="{StaticResource SectionTitle}" Margin="0,2,0,10" />
                         <WrapPanel>
-                            <Button Content="{StaticResource RefreshEngines}" Style="{StaticResource PrimaryButton}"
+                            <Button Content="{StaticResource RefreshEngines}" Style="{StaticResource ActionButton}"
                                     AutomationProperties.AutomationId="RefreshEngines" Command="{Binding RefreshEnginesCommand}" />
                             <Button Content="{StaticResource UpdateClam}" Style="{StaticResource ActionButton}"
                                     AutomationProperties.AutomationId="UpdateClam" Command="{Binding UpdateClamCommand}" />

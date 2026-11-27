@@ -6,9 +6,9 @@ Sentinel Security es una aplicación experimental de seguridad para Windows 11. 
 
 1. Instala [Microsoft .NET Desktop Runtime 10 para Windows x64](https://dotnet.microsoft.com/download/dotnet/10.0).
 2. Extrae `SentinelSecurity-win-x64.zip` y ejecuta `SentinelSecurity.UI.exe` desde la carpeta extraída.
-3. En **Actualizaciones**, revisa la disponibilidad de los motores. Puedes comenzar con un análisis personalizado de una carpeta pequeña.
+3. En **Actualizaciones**, selecciona **Configurar todos los motores**. El asistente descarga y verifica los componentes, configura las firmas y prueba cada motor. Después puedes comenzar con un análisis personalizado de una carpeta pequeña.
 
-La distribución es experimental y no está firmada. Mantén Microsoft Defender activo. Sentinel vigila cambios después de que ocurren y puede funcionar con una cuenta estándar. Los archivos de usuario, resultados, bases y cuarentena se guardan en `%LOCALAPPDATA%\SentinelSecurity`.
+La distribución es experimental y no está firmada. Mantén Microsoft Defender activo. Sentinel vigila cambios después de que ocurren y puede funcionar con una cuenta estándar. Los motores portátiles, catálogos, resultados y cuarentena se guardan en `%LOCALAPPDATA%\SentinelSecurity`.
 
 ## Compilar desde el código
 

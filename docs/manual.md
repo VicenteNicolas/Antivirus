@@ -19,6 +19,6 @@ Selecciona un hallazgo con hash y confirma el aislamiento. Sentinel compara el h
 
 ## Motores y configuración
 
-**Actualizaciones** muestra el estado de los motores y permite importar firmas, importar reglas YARA o actualizar mediante FreshClam. Para activar motores externos, guarda primero sus rutas en **Configuración**. Mantén las herramientas y las reglas al día desde sus fuentes oficiales.
+En **Actualizaciones**, pulsa **Configurar todos los motores** para ejecutar el asistente. Verás el progreso y el resultado de ClamAV, FreshClam, SHA-256 y YARA. Si prefieres instalar motores manualmente, guarda sus rutas en **Configuración** y usa las acciones de actualización o importación. Consulta el [detalle de fuentes y comprobaciones](motores.md).
 
 El inicio con Windows, el monitor, las exclusiones, las notificaciones, los límites y el horario se aplican al guardar. El horario mide las horas desde el último análisis rápido completado y se ejecuta cuando la aplicación está abierta. Usa 0 para desactivarlo. El modo gaming reduce a un trabajador por análisis, reduce avisos del monitor y pospone análisis programados y actualizaciones automáticas. El monitor que ya estaba activo sigue funcionando.

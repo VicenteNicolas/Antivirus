@@ -72,7 +72,7 @@
     <sys:String x:Key="Examined">Examinados</sys:String>
     <sys:String x:Key="Skipped">Omitidos</sys:String>
     <sys:String x:Key="Canceled">Cancelado</sys:String>
-    <sys:String x:Key="UpdatesIntro">Consulta los motores disponibles e importa firmas SHA-256 o reglas YARA de una fuente verificada.</sys:String>
+    <sys:String x:Key="UpdatesIntro">Configura los motores y consulta el estado de las firmas y las reglas.</sys:String>
     <sys:String x:Key="RefreshEngines">Comprobar motores</sys:String>
     <sys:String x:Key="UpdateClam">Actualizar ClamAV</sys:String>
     <sys:String x:Key="ImportYara">Importar reglas YARA…</sys:String>
@@ -80,7 +80,15 @@
     <sys:String x:Key="UpdatesHistory">Historial de actualizaciones</sys:String>
     <sys:String x:Key="Source">Origen</sys:String>
     <sys:String x:Key="Version">Versión</sys:String>
-    <sys:String x:Key="EngineSettings">Configurar motores</sys:String>
+    <sys:String x:Key="EngineSettings">Editar rutas de motores</sys:String>
+    <sys:String x:Key="EngineSetupNotice">Hay motores pendientes de configuración</sys:String>
+    <sys:String x:Key="EngineSetupLink">Abrir asistente</sys:String>
+    <sys:String x:Key="EngineSetupTitle">Asistente de configuración</sys:String>
+    <sys:String x:Key="EngineSetupIntro">Descarga y comprueba ClamAV, las firmas SHA-256 y las reglas YARA. La configuración requiere Internet y puede tardar varios minutos.</sys:String>
+    <sys:String x:Key="EngineSetupStart">Configurar automáticamente</sys:String>
+    <sys:String x:Key="EngineSetupCancel">Cancelar configuración</sys:String>
+    <sys:String x:Key="EngineSetupProgress">Progreso de la configuración</sys:String>
+    <sys:String x:Key="EngineTools">Configuración manual</sys:String>
     <sys:String x:Key="SettingsIntro">Guarda la configuración para conservar tus cambios. Indica una ruta por línea en las listas de carpetas y exclusiones.</sys:String>
     <sys:String x:Key="Preferences">Preferencias</sys:String>
     <sys:String x:Key="RunMonitor">Activar monitor en segundo plano</sys:String>

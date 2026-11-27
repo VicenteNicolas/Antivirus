@@ -1,0 +1,96 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:SentinelSecurity.UI">
+    <BooleanToVisibilityConverter x:Key="VisibleWhenTrue" />
+    <local:InvertBooleanToVisibilityConverter x:Key="VisibleWhenFalse" />
+
+    <Style x:Key="SetupStepStatus" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Status}" Value="En curso">
+                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Status}" Value="Verificado">
+                <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Status}" Value="Error">
+                <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Status}" Value="Cancelado">
+                <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <DataTemplate x:Key="EngineSetupPanel">
+        <Border Style="{StaticResource Surface}" Background="{DynamicResource HeroBrush}"
+                AutomationProperties.Name="{StaticResource EngineSetupTitle}" AutomationProperties.AutomationId="EngineSetupPanel">
+            <StackPanel>
+                <DockPanel Margin="0,0,0,6">
+                    <Path DockPanel.Dock="Left" Data="{StaticResource IconSettings}" Style="{StaticResource IconStyle}"
+                          Width="20" Height="20" Margin="0,0,10,0" />
+                    <TextBlock Text="{StaticResource EngineSetupTitle}" Style="{StaticResource SectionTitle}" TextWrapping="Wrap" />
+                </DockPanel>
+                <TextBlock Text="{StaticResource EngineSetupIntro}" Style="{StaticResource MutedText}" Margin="0,0,0,12" />
+                <WrapPanel>
+                    <Button Content="{StaticResource EngineSetupStart}" Style="{StaticResource PrimaryButton}"
+                            AutomationProperties.AutomationId="ConfigureEngines" Command="{Binding ConfigureEnginesCommand}"
+                            Visibility="{Binding SetupRunning, Converter={StaticResource VisibleWhenFalse}}" />
+                    <Button Content="{StaticResource EngineSetupCancel}" Style="{StaticResource DangerButton}"
+                            AutomationProperties.AutomationId="CancelSetup" Command="{Binding CancelSetupCommand}"
+                            Visibility="{Binding SetupRunning, Converter={StaticResource VisibleWhenTrue}}" />
+                </WrapPanel>
+                <TextBlock Text="{Binding SetupStatus}" Style="{StaticResource MutedText}" Margin="0,3,0,8"
+                           AutomationProperties.AutomationId="SetupStatus" AutomationProperties.LiveSetting="Polite" />
+                <Grid Margin="0,0,0,11"
+                      Visibility="{Binding SetupRunning, Converter={StaticResource VisibleWhenTrue}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <ProgressBar Value="{Binding SetupPercent, Mode=OneWay}" IsIndeterminate="{Binding SetupIndeterminate, Mode=OneWay}"
+                                 AutomationProperties.AutomationId="SetupProgress"
+                                 AutomationProperties.Name="{StaticResource EngineSetupProgress}" />
+                    <TextBlock Grid.Column="1" Text="{Binding SetupPercent, StringFormat={}{0:N0} %}"
+                               Foreground="{DynamicResource TextBrush}" Margin="9,0,0,0" VerticalAlignment="Center"
+                               Visibility="{Binding SetupIndeterminate, Converter={StaticResource VisibleWhenFalse}}" />
+                </Grid>
+                <ItemsControl ItemsSource="{Binding SetupSteps}" AutomationProperties.AutomationId="SetupSteps">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="2" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border CornerRadius="8" BorderThickness="1" BorderBrush="{DynamicResource DividerBrush}"
+                                    Background="{DynamicResource ControlBrush}" Padding="10,8" Margin="0,0,6,6">
+                                <StackPanel>
+                                    <DockPanel>
+                                        <TextBlock DockPanel.Dock="Right" Text="{Binding Status}" Style="{StaticResource SetupStepStatus}"
+                                                   VerticalAlignment="Center" Margin="8,0,0,0" />
+                                        <TextBlock Text="{Binding Name}" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold"
+                                                   VerticalAlignment="Center" TextWrapping="Wrap" />
+                                    </DockPanel>
+                                    <TextBlock Text="{Binding Detail}" Margin="0,4,0,0">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource MutedText}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Detail}" Value="">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+    </DataTemplate>
+</ResourceDictionary>

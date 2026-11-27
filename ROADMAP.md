@@ -1,5 +1,7 @@
 # Estado de desarrollo
 
+La versión 0.2.0 añade el asistente de motores, las descargas con verificación SHA-256, las reglas iniciales de YARA y un catálogo oficial de hashes extraído de las bases firmadas de ClamAV. Los controles manuales de 0.1.0 siguen accesibles.
+
 | Fase | Estado de 0.1.0 |
 | --- | --- |
 | Inicialización | Solución .NET 10, main, GitHub y CI de Windows |

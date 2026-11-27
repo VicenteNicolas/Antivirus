@@ -136,8 +136,10 @@ public sealed partial class ShellViewModel
         }
     }
 
-    private void ConfigureEngine() => engine.Configure(new EngineConfiguration(settings.ClamScan,
-        settings.ClamDatabase, settings.Yara, settings.YaraRules));
+    private static EngineConfiguration DetectorConfiguration(SentinelSettings state) =>
+        new(state.ClamScan, state.ClamDatabase, state.Yara, state.YaraRules);
+
+    private void ConfigureEngine() => engine.Configure(DetectorConfiguration(settings));
 
     private FileMonitor? CreateMonitor(SentinelSettings candidate)
     {
@@ -274,13 +276,23 @@ public sealed partial class ShellViewModel
         if (settings.FreshClam is not { } freshClam || settings.ClamScan is not { } clamScan)
             throw new InvalidOperationException("Guarda las rutas de FreshClam y ClamScan en Configuración.");
         StatusText = "Descargando y verificando las firmas de ClamAV…";
-        var result = await EngineUpdates.UpdateClamAsync(freshClam, clamScan, Path.Combine(dataDirectory, "ClamAV"), ct);
-        var updated = settings with { ClamDatabase = result.Path };
-        await store.SaveSettingsAndRecordUpdateAsync(updated, new UpdateRecord("ClamAV", result.Version, result.Updated), ct);
-        settings = updated;
-        ClamDatabasePath = result.Path;
-        await ReloadDetectionAsync(ct);
+        var result = await RefreshClamDatabaseAsync(clamScan, freshClam, ct);
         StatusText = "Base ClamAV verificada y activada.";
+        try
+        {
+            if (settings.PortableClam is { } portable &&
+                string.Equals(portable.ClamScan, clamScan, StringComparison.OrdinalIgnoreCase))
+            {
+                var catalogVersion = $"Cisco Talos ClamAV · {result.Version}";
+                if (Updates.FirstOrDefault(item => item.Source == "SHA-256 oficial")?.Version != catalogVersion)
+                    StatusText = await ImportClamSha256Async(portable.SigTool, result, ct);
+            }
+        }
+        finally
+        {
+            if (!ct.IsCancellationRequested)
+                await RefreshEngineDataAsync(ct);
+        }
     }
 
     private async Task ImportYaraAsync(CancellationToken ct)

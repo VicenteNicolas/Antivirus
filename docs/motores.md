@@ -1,5 +1,30 @@
 # Motores de detección y actualizaciones
 
+## Configuración inicial
+
+En **Inicio**, entra en el asistente cuando aparezca el aviso de motores sin configurar. En **Actualizaciones**, pulsa **Configurar todos los motores** para comenzar. El asistente usa la cuenta de Windows actual y guarda los componentes portátiles y las bases en el perfil local de Sentinel.
+
+| Etapa | Origen y comprobación |
+| --- | --- |
+| ClamAV | ZIP oficial de Cisco Talos para Windows x64. Sentinel comprueba el SHA-256 publicado y ejecuta las comprobaciones de versión de los componentes portátiles. |
+| FreshClam | Bases oficiales de ClamAV. FreshClam comprueba las bases y Sentinel ejecuta ClamAV sobre un archivo inofensivo antes de activar la generación. |
+| SHA-256 | Firmas de archivo completo extraídas de las bases firmadas de Cisco Talos. Sentinel actualiza el catálogo oficial en SQLite y comprueba la búsqueda de una firma. Las importaciones manuales conservan su catálogo separado. |
+| YARA | Busca una instalación conocida y comprueba que responda. Si hace falta, descarga el ZIP oficial de VirusTotal y verifica su SHA-256. Conserva las reglas activas válidas o incorpora seis archivos de reglas de Windows de ReversingLabs y comprueba que pueden analizar un archivo inofensivo. |
+
+El primer paso de ClamAV puede descargar varios cientos de megabytes de herramientas y firmas. La interfaz muestra cada etapa y permite cancelar. Si alguna falla, revisa su mensaje y vuelve a ejecutar el asistente. Las etapas que ya activaron un motor válido se conservan. Si el servidor de FreshClam impone una espera, los intentos posteriores respetan ese estado.
+
+Las reglas iniciales de ReversingLabs se descargan en código fuente desde la revisión `e0a0be54aa1e11ccfd6854e4f19e9476f328fd84`. Se comprueba el SHA-256 fijado para cada archivo y su licencia MIT. Es una selección inicial de reglas de Windows. [Repositorio oficial de ReversingLabs](https://github.com/reversinglabs/reversinglabs-yara-rules/tree/e0a0be54aa1e11ccfd6854e4f19e9476f328fd84)
+
+La versión 0.2.0 fija las descargas portátiles de ClamAV 1.5.5 y YARA 4.6.0. [ClamAV 1.5.5](https://github.com/Cisco-Talos/clamav/releases/tag/clamav-1.5.5) · [YARA 4.6.0](https://github.com/VirusTotal/yara/releases/tag/v4.6.0)
+
+**Actualizar ClamAV** actualiza también el catálogo SHA-256 si usas la instalación del asistente. En **Configuración**, puedes permitir una comprobación diaria mientras Sentinel esté abierto. Las descargas y el análisis funcionan junto a Microsoft Defender.
+
+La prueba de integración con bases firmadas se habilita indicando el directorio de `main.cvd`, `daily.cvd` y `bytecode.cvd` con `SENTINEL_TEST_CLAM_DATABASE`, y la ruta de Sigtool con `SENTINEL_TEST_SIGTOOL`. La prueba verifica la importación y una búsqueda tras reabrir SQLite.
+
+## Configuración manual
+
+Los controles de importación y las rutas manuales siguen disponibles en **Actualizaciones** y **Configuración**.
+
 ## ClamAV
 
 1. Instala los binarios de Windows x64 desde [ClamAV](https://www.clamav.net/downloads). Mantén el paquete oficial actualizado. ClamAV es GPLv2 y se distribuye por separado de Sentinel. [Licencia y capacidades](https://docs.clamav.net/Introduction.html)

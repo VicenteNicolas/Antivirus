@@ -23,7 +23,9 @@ publish/
 *.sqlite3
 *.log
 *.cvd
+*.cvd.sign
 *.cld
+*.cld.sign
 *.cud
 *.eicar*
 eicar*

@@ -28,7 +28,7 @@ public sealed class SqliteStore : ISignatureLookup
     public Task InitializeAsync(CancellationToken ct = default) => RunAsync(connection =>
     {
         using var version = Command(connection, "PRAGMA user_version");
-        if (Convert.ToInt64(version.ExecuteScalar()) > 1)
+        if (Convert.ToInt64(version.ExecuteScalar()) > 2)
             throw new InvalidOperationException("La base de datos requiere una versión posterior de Sentinel Security.");
 
         Execute(connection, "PRAGMA journal_mode = WAL");
@@ -37,18 +37,20 @@ public sealed class SqliteStore : ISignatureLookup
             CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY CHECK(id = 1), payload TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS exclusions (path TEXT PRIMARY KEY);
             CREATE TABLE IF NOT EXISTS signatures (sha256 TEXT PRIMARY KEY, name TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS official_signatures (sha256 TEXT PRIMARY KEY, name TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS scans (id TEXT PRIMARY KEY, started INTEGER NOT NULL, payload TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS findings (id INTEGER PRIMARY KEY, scan_id TEXT, payload TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS quarantine (id TEXT PRIMARY KEY, isolated INTEGER NOT NULL, confirmed INTEGER NOT NULL, payload TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS updates (id INTEGER PRIMARY KEY, source TEXT NOT NULL, version TEXT NOT NULL, updated INTEGER NOT NULL);
             CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY, occurred INTEGER NOT NULL, category TEXT NOT NULL, message TEXT NOT NULL);
-            PRAGMA user_version = 1;
+            PRAGMA user_version = 2;
             """);
         schema.Transaction = transaction;
         schema.ExecuteNonQuery();
         transaction.Commit();
 
-        using var count = Command(connection, "SELECT EXISTS (SELECT 1 FROM signatures)");
+        using var count = Command(connection,
+            "SELECT EXISTS (SELECT 1 FROM signatures) OR EXISTS (SELECT 1 FROM official_signatures)");
         Volatile.Write(ref _hasSignatures, Convert.ToInt64(count.ExecuteScalar()) != 0);
     }, ct);
 
@@ -103,26 +105,56 @@ public sealed class SqliteStore : ISignatureLookup
     public ValueTask<string?> FindAsync(string sha256, CancellationToken ct = default)
     {
         if (!HasSignatures) return ValueTask.FromResult<string?>(null);
-        return new ValueTask<string?>(RunAsync(connection =>
-        {
-            using var command = Command(connection, "SELECT name FROM signatures WHERE sha256 = $sha", ("$sha", sha256.ToUpperInvariant()));
-            return command.ExecuteScalar() as string;
-        }, ct));
+        return new ValueTask<string?>(RunAsync(connection => FindSignature(connection, sha256), ct));
     }
 
-    public Task ImportSignaturesAsync(IReadOnlyList<SignatureEntry> signatures, string version, CancellationToken ct = default) => RunAsync(connection =>
+    private static string? FindSignature(SqliteConnection connection, string sha256)
+    {
+        using var command = Command(connection, """
+            SELECT name FROM signatures WHERE sha256 = $sha
+            UNION ALL
+            SELECT name FROM official_signatures WHERE sha256 = $sha LIMIT 1
+            """, ("$sha", sha256.ToUpperInvariant()));
+        return command.ExecuteScalar() as string;
+    }
+
+    public Task<bool> VerifyAsync(CancellationToken ct) => RunAsync(connection =>
+    {
+        using var command = Command(connection, """
+            SELECT sha256, name FROM signatures
+            UNION ALL SELECT sha256, name FROM official_signatures LIMIT 1
+            """);
+        using var reader = command.ExecuteReader();
+        if (!reader.Read())
+            return false;
+        var hash = reader.GetString(0);
+        var name = reader.GetString(1);
+        reader.Close();
+        return IsSha256(hash) && !string.IsNullOrWhiteSpace(name) &&
+            string.Equals(name, FindSignature(connection, hash), StringComparison.Ordinal);
+    }, ct);
+
+    public Task ImportSignaturesAsync(IReadOnlyList<SignatureEntry> signatures, string version, CancellationToken ct = default) =>
+        ImportSignaturesAsync(signatures, version, official: false, ct);
+
+    public Task ImportOfficialSignaturesAsync(IReadOnlyList<SignatureEntry> signatures, string version, CancellationToken ct) =>
+        ImportSignaturesAsync(signatures, version, official: true, ct);
+
+    private Task ImportSignaturesAsync(IReadOnlyList<SignatureEntry> signatures, string version, bool official,
+        CancellationToken ct) => RunAsync(connection =>
     {
         ArgumentNullException.ThrowIfNull(signatures);
         ArgumentException.ThrowIfNullOrWhiteSpace(version);
-        if (signatures.Count is 0 or > 1_000_000 || version.Length > 256)
-            throw new ArgumentException("Se requiere entre 1 y 1 000 000 firmas y una versión de hasta 256 caracteres.");
+        if (signatures.Count is 0 or > 2_000_000 || version.Length > 256)
+            throw new ArgumentException("Se requiere entre 1 y 2 000 000 firmas y una versión de hasta 256 caracteres.");
 
         using var transaction = connection.BeginTransaction();
-        using var clear = Command(connection, "DELETE FROM signatures");
+        using var clear = Command(connection, official ? "DELETE FROM official_signatures" : "DELETE FROM signatures");
         clear.Transaction = transaction;
         clear.ExecuteNonQuery();
 
-        using var insert = Command(connection, "INSERT INTO signatures VALUES($sha, $name)");
+        using var insert = Command(connection, official ?
+            "INSERT INTO official_signatures VALUES($sha, $name)" : "INSERT INTO signatures VALUES($sha, $name)");
         insert.Transaction = transaction;
         var hash = insert.Parameters.Add("$sha", SqliteType.Text);
         var name = insert.Parameters.Add("$name", SqliteType.Text);
@@ -136,7 +168,15 @@ public sealed class SqliteStore : ISignatureLookup
             insert.ExecuteNonQuery();
         }
 
-        InsertUpdate(connection, new UpdateRecord("SHA-256", version.Trim(), DateTimeOffset.UtcNow), transaction);
+        using var check = Command(connection, official
+            ? "SELECT name FROM official_signatures WHERE sha256 = $sha"
+            : "SELECT name FROM signatures WHERE sha256 = $sha", ("$sha", signatures[0].Sha256.ToUpperInvariant()));
+        check.Transaction = transaction;
+        if (!string.Equals(check.ExecuteScalar() as string, signatures[0].Name.Trim(), StringComparison.Ordinal))
+            throw new IOException("No se pudo comprobar el catálogo de firmas después de importarlo.");
+        InsertUpdate(connection, new UpdateRecord(official ? "SHA-256 oficial" : "SHA-256", version.Trim(),
+            DateTimeOffset.UtcNow), transaction);
+        ct.ThrowIfCancellationRequested();
         transaction.Commit();
         Volatile.Write(ref _hasSignatures, true);
     }, ct);

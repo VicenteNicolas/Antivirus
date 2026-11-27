@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Security.Cryptography;
 using SentinelSecurity.Core;
 
 namespace SentinelSecurity.Engine;
@@ -14,10 +15,36 @@ public sealed class ScanEngine(ISignatureLookup signatures)
     public async Task<IReadOnlyList<EngineStatus>> GetStatusAsync(CancellationToken ct)
     {
         var current = Volatile.Read(ref configuration);
-        var externalStatuses = await external.GetStatusAsync(current, ct);
-        var signatureStatus = new EngineStatus("SHA-256", signatures.HasSignatures, signatures.HasSignatures
-            ? "Hay firmas locales importadas." : "Sin firmas locales importadas.");
+        var externalTask = external.GetStatusAsync(current, ct);
+        var signatureTask = CheckSignaturesAsync(ct);
+        await Task.WhenAll(externalTask, signatureTask);
+        var externalStatuses = await externalTask;
+        var signatureStatus = await signatureTask;
         return [signatureStatus, new EngineStatus("Heurística", true, "Inspección estática local disponible."), .. externalStatuses];
+    }
+
+    public Task<EngineStatus> CheckClamAsync(EngineConfiguration candidate, CancellationToken ct) =>
+        external.GetClamStatusAsync(candidate, ct);
+
+    public Task<EngineStatus> CheckYaraAsync(EngineConfiguration candidate, CancellationToken ct) =>
+        external.GetYaraStatusAsync(candidate, ct);
+
+    public async Task<EngineStatus> CheckSignaturesAsync(CancellationToken ct)
+    {
+        if (!signatures.HasSignatures)
+            return new EngineStatus("SHA-256", false, "Sin firmas locales importadas.");
+        try
+        {
+            var digest = Convert.ToHexString(SHA256.HashData("abc"u8));
+            var available = digest == "BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD" &&
+                await signatures.VerifyAsync(ct);
+            return new EngineStatus("SHA-256", available, available ?
+                "Cálculo SHA-256 y búsqueda en el catálogo verificados." : "No se pudo verificar el catálogo local.");
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            return new EngineStatus("SHA-256", false, "El catálogo local no respondió a la comprobación.");
+        }
     }
 
     public async Task<FileResult> ScanFileAsync(string path, ScanOptions options, CancellationToken ct)

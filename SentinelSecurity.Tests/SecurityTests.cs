@@ -1,4 +1,6 @@
 using System.Security.Cryptography;
+using System.Net;
+using Microsoft.Data.Sqlite;
 using SentinelSecurity.Core;
 using SentinelSecurity.Engine;
 using SentinelSecurity.Infrastructure;
@@ -12,6 +14,10 @@ public sealed class SecurityTests
     private const string StandardEicarSha256 = "275A021BBFB6489E54D471899F7DB9D1663FC695EC2FE2A2C4538AABF651FD0F";
     private static string? EicarPath => Environment.GetEnvironmentVariable("SENTINEL_EICAR_PATH");
     public static bool HasLocalEicarFixture => EicarPath is { } path && File.Exists(path);
+    private static string? ClamDatabase => Environment.GetEnvironmentVariable("SENTINEL_TEST_CLAM_DATABASE");
+    private static string? ClamSigTool => Environment.GetEnvironmentVariable("SENTINEL_TEST_SIGTOOL");
+    public static bool HasOfficialClamFixture => ClamDatabase is { } directory && Directory.Exists(directory) &&
+        ClamSigTool is { } tool && File.Exists(tool);
 
     [Fact]
     public async Task HashCatalogFindsTheExactContentAndSurvivesReopen()
@@ -34,6 +40,99 @@ public sealed class SecurityTests
         Assert.Contains(matched.Detections, item => item.Name == "Synthetic.Test");
         Assert.Equal(Verdict.Clean, (await engine.ScanFileAsync(different, new(), ct)).Verdict);
         Assert.Contains(await reopened.GetUpdatesAsync(ct), record => record.Version == "test-v1");
+    }
+
+    [Fact]
+    public async Task OfficialCatalogUpdatesAreAtomicAndPreserveManualSignatures()
+    {
+        using var directory = new FixtureDirectory();
+        var ct = TestContext.Current.CancellationToken;
+        var manual = Convert.ToHexString(SHA256.HashData("manual fixture"u8));
+        var official = Convert.ToHexString(SHA256.HashData("official fixture"u8));
+        var newer = Convert.ToHexString(SHA256.HashData("updated fixture"u8));
+        var store = await directory.StoreAsync(ct);
+        Assert.False((await new ScanEngine(store).CheckSignaturesAsync(ct)).Available);
+        await store.ImportSignaturesAsync([new SignatureEntry(manual, "Local.Test")], "manual", ct);
+        await store.ImportOfficialSignaturesAsync([new SignatureEntry(official, "Official.Test")], "official-1", ct);
+        await Assert.ThrowsAsync<ArgumentException>(() => store.ImportOfficialSignaturesAsync(
+            [new SignatureEntry(newer, "New.Test"), new SignatureEntry("unusable", "Rejected")], "invalid", ct));
+        var reloaded = await directory.StoreAsync(ct);
+        Assert.True((await new ScanEngine(reloaded).CheckSignaturesAsync(ct)).Available);
+        Assert.Equal("Official.Test", await reloaded.FindAsync(official, ct));
+        Assert.Equal("Local.Test", await reloaded.FindAsync(manual, ct));
+        Assert.Null(await reloaded.FindAsync(newer, ct));
+        await reloaded.ImportOfficialSignaturesAsync([new SignatureEntry(newer, "New.Test")], "official-2", ct);
+        Assert.Null(await reloaded.FindAsync(official, ct));
+        Assert.Equal("Local.Test", await reloaded.FindAsync(manual, ct));
+        Assert.Equal("New.Test", await reloaded.FindAsync(newer, ct));
+    }
+
+    [Fact]
+    public async Task VersionOneDatabaseKeepsItsManualCatalogAfterMigration()
+    {
+        using var directory = new FixtureDirectory();
+        var ct = TestContext.Current.CancellationToken;
+        var digest = Convert.ToHexString(SHA256.HashData("existing signature"u8));
+        Directory.CreateDirectory(directory.Data);
+        using (var connection = new SqliteConnection(new SqliteConnectionStringBuilder
+        {
+            DataSource = Path.Combine(directory.Data, "sentinel.db"), Pooling = false
+        }.ToString()))
+        {
+            await connection.OpenAsync(ct);
+            using var command = connection.CreateCommand();
+            command.CommandText = """
+                CREATE TABLE signatures (sha256 TEXT PRIMARY KEY, name TEXT NOT NULL);
+                INSERT INTO signatures VALUES ($sha, 'Existing.Test');
+                PRAGMA user_version = 1;
+                """;
+            command.Parameters.AddWithValue("$sha", digest);
+            await command.ExecuteNonQueryAsync(ct);
+        }
+        var store = await directory.StoreAsync(ct);
+        Assert.True(await store.VerifyAsync(ct));
+        Assert.Equal("Existing.Test", await store.FindAsync(digest, ct));
+    }
+
+    [Fact]
+    public async Task InstallerRejectsAnAlteredOfficialPackageBeforeActivation()
+    {
+        using var directory = new FixtureDirectory();
+        var ct = TestContext.Current.CancellationToken;
+        using var network = new HttpClient(new IncorrectPackage());
+        var installer = new OfficialToolInstaller(network);
+        var error = await Assert.ThrowsAsync<IOException>(() => installer.InstallYaraAsync(directory.Files, null, ct));
+        Assert.Contains("SHA-256 oficial", error.Message);
+        Assert.Empty(Directory.EnumerateFileSystemEntries(directory.Files));
+    }
+
+    [Fact]
+    public async Task TrustedYaraRulesRejectUnexpectedBytesBeforeCallingTheEngine()
+    {
+        using var directory = new FixtureDirectory();
+        var ct = TestContext.Current.CancellationToken;
+        using var network = new HttpClient(new IncorrectPackage());
+        var rules = new TrustedYaraRules(network);
+        var error = await Assert.ThrowsAsync<IOException>(() =>
+            rules.ImportAsync(Path.Combine(directory.Files, "never-invoked.exe"), directory.Data, null, ct));
+        Assert.Contains("no coincide", error.Message);
+        Assert.False(Directory.Exists(directory.Data));
+    }
+
+    [Fact(SkipUnless = nameof(HasOfficialClamFixture),
+        Skip = "Requiere Sigtool y bases oficiales de FreshClam preconfiguradas fuera de CI.")]
+    public async Task SignedClamDatabasesProduceAPersistentExactHashCatalog()
+    {
+        using var directory = new FixtureDirectory();
+        var ct = TestContext.Current.CancellationToken;
+        var signatures = await OfficialSha256Catalog.ReadAsync(Path.GetFullPath(ClamSigTool!),
+            Path.GetFullPath(ClamDatabase!), ct);
+        Assert.NotEmpty(signatures);
+        var store = await directory.StoreAsync(ct);
+        await store.ImportOfficialSignaturesAsync(signatures, "official-live-test", ct);
+        var reopened = await directory.StoreAsync(ct);
+        Assert.True((await new ScanEngine(reopened).CheckSignaturesAsync(ct)).Available);
+        Assert.Equal(signatures[0].Name, await reopened.FindAsync(signatures[0].Sha256, ct));
     }
 
     [Fact]
@@ -105,12 +204,16 @@ public sealed class SecurityTests
         Assert.False((await store.LoadSettingsAsync(ct)).StartWithWindows);
         await store.SaveSettingsAsync(new SentinelSettings
         {
-            GamingMode = true, Exclusions = [directory.Files], Concurrency = 3
+            GamingMode = true, Exclusions = [directory.Files], Concurrency = 3,
+            PortableClam = new("ClamScan fixture", "FreshClam fixture", "SigTool fixture", "1.5.5"),
+            YaraRules = "YARA rules fixture"
         }, ct);
         var saved = await (await directory.StoreAsync(ct)).LoadSettingsAsync(ct);
         Assert.True(saved.GamingMode);
         Assert.Equal(directory.Files, Assert.Single(saved.Exclusions));
         Assert.Equal(3, saved.Concurrency);
+        Assert.Equal("1.5.5", saved.PortableClam?.Version);
+        Assert.Equal("YARA rules fixture", saved.YaraRules);
         Assert.Empty(Directory.EnumerateFiles(directory.Files));
     }
 
@@ -149,16 +252,24 @@ public sealed class SecurityTests
         var hash = Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text)));
         await store.ImportSignaturesAsync([new SignatureEntry(hash, "Monitor.Test")], "test-monitor", ct);
         var result = new TaskCompletionSource<FileResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var afterUpdate = new TaskCompletionSource<FileResult>(TaskCreationOptions.RunContinuationsAsynchronously);
         await using var monitor = new FileMonitor(new ScanEngine(store), new(), [directory.Files],
             (file, _) =>
             {
-                if (file.Verdict == Verdict.Malware)
+                if (file.Detections.Any(detection => detection.Name == "Monitor.Test"))
                     result.TrySetResult(file);
+                if (file.Detections.Any(detection => detection.Name == "Monitor.Updated"))
+                    afterUpdate.TrySetResult(file);
                 return ValueTask.CompletedTask;
             }, _ => { });
         var file = await directory.WriteAsync("watch.txt", text, ct);
         Assert.True(monitor.IsActive);
         Assert.Equal(file, (await result.Task.WaitAsync(TimeSpan.FromSeconds(15), ct)).Path);
+        await store.ImportOfficialSignaturesAsync([new SignatureEntry(hash, "Monitor.Updated")], "test-new", ct);
+        await store.ImportSignaturesAsync([new SignatureEntry(Convert.ToHexString(SHA256.HashData("another fixture"u8)),
+            "Local")], "new-manual", ct);
+        monitor.RecheckWithUpdatedDetectors();
+        Assert.Equal(file, (await afterUpdate.Task.WaitAsync(TimeSpan.FromSeconds(15), ct)).Path);
     }
 
     [Fact(SkipUnless = nameof(HasLocalEicarFixture), Skip = "EICAR externo opcional; no se crea ni descarga en CI.")]
@@ -177,6 +288,19 @@ public sealed class SecurityTests
     {
         using var stream = File.OpenRead(path);
         return Convert.ToHexString(await SHA256.HashDataAsync(stream, ct));
+    }
+
+    private sealed class IncorrectPackage : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                RequestMessage = request,
+                Content = new ByteArrayContent("A benign integrity test payload"u8.ToArray())
+            });
+        }
     }
 
     private sealed class FixtureDirectory : IDisposable

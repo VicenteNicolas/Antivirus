@@ -24,7 +24,7 @@ internal sealed class ExternalDetectors
         return (detections, errors);
     }
 
-    private async Task<EngineStatus> GetClamStatusAsync(EngineConfiguration config, CancellationToken ct)
+    public async Task<EngineStatus> GetClamStatusAsync(EngineConfiguration config, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(config.ClamScan))
             return new EngineStatus("ClamAV", false, "Seleccione clamscan.exe en Configuración.");
@@ -37,7 +37,7 @@ internal sealed class ExternalDetectors
             try
             {
                 var result = await RunClamAsync(config.ClamScan, config.ClamDatabase, temp, ct);
-                if (result.ExitCode != 0)
+                if (!ClamInspectedProbe(result))
                     throw new IOException(result.FirstError("No se pudo validar la base de ClamAV."));
                 var version = await ToolProcess.RunAsync(config.ClamScan,
                     AddDatabase(config.ClamDatabase, ["--version"]), TimeSpan.FromSeconds(10), ct);
@@ -59,7 +59,7 @@ internal sealed class ExternalDetectors
         }
     }
 
-    private async Task<EngineStatus> GetYaraStatusAsync(EngineConfiguration config, CancellationToken ct)
+    public async Task<EngineStatus> GetYaraStatusAsync(EngineConfiguration config, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(config.Yara) || string.IsNullOrWhiteSpace(config.YaraRules))
             return new EngineStatus("YARA", false, "Seleccione yara.exe y configure reglas de una fuente verificada.");
@@ -118,6 +118,10 @@ internal sealed class ExternalDetectors
             ["--stdout", "--no-summary", "--official-db-only=yes", "--follow-dir-symlinks=0", "--follow-file-symlinks=0",
                 "--max-filesize=128M", "--max-scansize=160M", "--max-files=1000", "--max-recursion=12",
                 "--max-scantime=30000", "--alert-exceeds-max=yes", "--alert-encrypted=yes", "--", path]), ClamTimeout, ct);
+
+    internal static bool ClamInspectedProbe(ToolResult result) => result.ExitCode == 0 &&
+        result.StandardOutput.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(line => line.EndsWith(".txt: OK", StringComparison.Ordinal));
 
     private static IEnumerable<string> AddDatabase(string? database, string[] arguments)
     {

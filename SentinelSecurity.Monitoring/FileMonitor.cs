@@ -22,13 +22,14 @@ public sealed class FileMonitor : IAsyncDisposable
     });
     private readonly Channel<bool> reconcile = Channel.CreateBounded<bool>(1);
     private readonly ConcurrentDictionary<string, byte> pending = new(StringComparer.OrdinalIgnoreCase);
-    private readonly ConcurrentDictionary<string, (long Length, DateTime Write, DateTime Created)> seen =
+    private readonly ConcurrentDictionary<string, ((long Length, DateTime Write, DateTime Created) Stamp, int Revision)> seen =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly CancellationTokenSource stop = new();
     private readonly Task worker;
     private readonly Task sweeper;
     private readonly Task timer;
     private int degraded;
+    private int detectorRevision;
 
     public FileMonitor(ScanEngine engine, ScanOptions options, IEnumerable<string> roots,
         Func<FileResult, CancellationToken, ValueTask> onFile, Action<string> onStatus)
@@ -80,6 +81,13 @@ public sealed class FileMonitor : IAsyncDisposable
 
     public bool IsDegraded => Volatile.Read(ref degraded) != 0;
     public bool IsActive => watchers.Count > 0 && !worker.IsCompleted && !stop.IsCancellationRequested && !IsDegraded;
+
+    public void RecheckWithUpdatedDetectors()
+    {
+        Interlocked.Increment(ref detectorRevision);
+        seen.Clear();
+        reconcile.Writer.TryWrite(true);
+    }
 
     private void OnChanged(object sender, FileSystemEventArgs args)
     {
@@ -137,7 +145,8 @@ public sealed class FileMonitor : IAsyncDisposable
                     foreach (var path in Directory.EnumerateFiles(root, "*", enumeration))
                     {
                         ct.ThrowIfCancellationRequested();
-                        if (TryStamp(path) is { } stamp && seen.TryGetValue(path, out var previous) && stamp == previous)
+                        if (TryStamp(path) is { } stamp && seen.TryGetValue(path, out var previous) &&
+                            stamp == previous.Stamp && previous.Revision == Volatile.Read(ref detectorRevision))
                             continue;
                         if (pending.TryAdd(path, 0))
                             await queue.Writer.WriteAsync((path, 0), ct);
@@ -172,6 +181,7 @@ public sealed class FileMonitor : IAsyncDisposable
                     await Task.Delay(remaining, ct);
             }
             FileResult? result = null;
+            var activeRevision = Volatile.Read(ref detectorRevision);
             try
             {
                 for (var attempt = 0; attempt < 3; attempt++)
@@ -184,11 +194,12 @@ public sealed class FileMonitor : IAsyncDisposable
                 }
                 if (result is null)
                     continue;
-                if (TryStamp(path) == initial && result.Verdict != Verdict.Unscanned)
+                if (TryStamp(path) == initial && result.Verdict != Verdict.Unscanned &&
+                    activeRevision == Volatile.Read(ref detectorRevision))
                 {
                     if (seen.Count >= 100_000)
                         seen.Clear();
-                    seen[path] = initial.Value;
+                    seen[path] = (initial.Value, activeRevision);
                 }
                 if (result.Verdict != Verdict.Clean || result.Error is not null)
                     await onFile(result, ct);

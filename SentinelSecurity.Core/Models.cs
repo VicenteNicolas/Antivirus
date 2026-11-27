@@ -19,11 +19,13 @@ public sealed record UpdateRecord(string Source, string Version, DateTimeOffset 
 public sealed record EngineConfiguration(string? ClamScan = null, string? ClamDatabase = null,
     string? Yara = null, string? YaraRules = null);
 public sealed record EngineStatus(string Name, bool Available, string Detail);
+public sealed record ClamToolInstallation(string ClamScan, string FreshClam, string SigTool, string Version);
 
 public interface ISignatureLookup
 {
     bool HasSignatures { get; }
     ValueTask<string?> FindAsync(string sha256, CancellationToken ct);
+    Task<bool> VerifyAsync(CancellationToken ct);
 }
 
 public sealed record SentinelSettings
@@ -42,6 +44,7 @@ public sealed record SentinelSettings
     public string? ClamScan { get; init; }
     public string? ClamDatabase { get; init; }
     public string? FreshClam { get; init; }
+    public ClamToolInstallation? PortableClam { get; init; }
     public string? Yara { get; init; }
     public string? YaraRules { get; init; }
 }
